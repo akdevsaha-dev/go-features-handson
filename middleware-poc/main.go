@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strings"
 	"time"
 )
 
@@ -36,6 +37,24 @@ func aboutHandler(w http.ResponseWriter, r *http.Request) {
 
 }
 
+func queryHandler(w http.ResponseWriter, r *http.Request) {
+	query := r.URL.Query()
+	name := query.Get("name")
+	if name == "" {
+		name = "Anon"
+	}
+	fmt.Fprintf(w, "Hello, %s!", name)
+}
+
+func pathHandler(w http.ResponseWriter, r *http.Request) {
+	pathSegments := strings.Split(r.URL.Path, "/")
+	if len(pathSegments) >= 2 && pathSegments[1] == "user" {
+		userId := pathSegments[2]
+		fmt.Fprintf(w, "Hi user: %s!", userId)
+	} else {
+		http.NotFound(w, r)
+	}
+}
 func main() {
 
 	mux := http.NewServeMux()
@@ -43,6 +62,10 @@ func main() {
 	mux.Handle("/", loggingMiddleware(headerMiddleware(http.HandlerFunc(homeHandler))))
 
 	mux.Handle("/about", loggingMiddleware(headerMiddleware(http.HandlerFunc(aboutHandler))))
+
+	mux.Handle("/name", http.HandlerFunc(queryHandler))
+
+	mux.Handle("/user/", http.HandlerFunc(pathHandler))
 
 	log.Println("Starting server on port 8080 ...")
 
